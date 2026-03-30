@@ -3,6 +3,7 @@
 > **Alpha software.** Expect bugs, broken provider endpoints, and rough edges. Use at your own risk.
 
 A minimal AI coding agent for the terminal, built to run on hardware that nothing else will.
+CLEARLY NOT FINISHED!!! I'll accept any PR that looks right and keeps it small.
 
 ## Why
 
@@ -15,13 +16,13 @@ The terminal AI coding CLI space has a Node.js problem. OpenCode freezes. Claude
 One-liner — downloads the binary, makes it executable, moves it to your PATH:
 
 ```sh
-curl -fsSL https://github.com/cfpy67/au-cli/releases/latest/download/au-linux-amd64 -o au && chmod +x au && sudo mv au /usr/local/bin/au
+curl -fsSL https://github.com/cfpy67/au-cli/releases/download/v0.1.0-alpha/au-linux-amd64 -o au && chmod +x au && sudo mv au /usr/local/bin/au
 ```
 
 For ARM64 (Raspberry Pi, Ampere VPS):
 
 ```sh
-curl -fsSL https://github.com/cfpy67/au-cli/releases/latest/download/au-linux-arm64 -o au && chmod +x au && sudo mv au /usr/local/bin/au
+curl -fsSL https://github.com/cfpy67/au-cli/releases/download/v0.1.0-alpha/au-linux-arm64 -o au && chmod +x au && sudo mv au /usr/local/bin/au
 ```
 
 Then just run:
