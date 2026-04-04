@@ -54,6 +54,55 @@ There are no Makefiles, CI configs, linters, or test suites configured.
 
 `/connect`, `/use <provider>`, `/use custom`, `/key [value]`, `/model <id>`, `/models`, `/providers`, `/thinking <0-10>`, `/reset`, `/q` `/quit` `/exit`
 
+## Release Process (follow this for every new version)
+
+When bumping the version or cutting a release, you **must** complete all of the following steps:
+
+### 1. Update the version constant
+In `update.go`, change `const version = "vX.X.X-alpha"` to the new version string.
+
+### 2. Build all platform binaries
+Run these commands from the repo root (requires Go cross-compilation, which is built-in):
+
+```bash
+GOOS=linux   GOARCH=amd64 go build -o dist/au-linux-amd64   .
+GOOS=linux   GOARCH=arm64 go build -o dist/au-linux-arm64   .
+GOOS=darwin  GOARCH=amd64 go build -o dist/au-darwin-amd64  .
+GOOS=darwin  GOARCH=arm64 go build -o dist/au-darwin-arm64  .
+GOOS=windows GOARCH=amd64 go build -o dist/au-windows-amd64.exe .
+```
+
+All five binaries must be built. The filenames must match exactly — `update.go:platformAssetName()` constructs the name as `au-{GOOS}-{GOARCH}` (+ `.exe` on Windows) and that is what the self-update download looks for.
+
+### 3. Update README install URLs
+Every hardcoded release URL in `README.md` must be updated to the new version tag. There are currently five places:
+- Linux amd64 curl line
+- Linux arm64 curl line
+- macOS Intel curl line
+- macOS Apple Silicon curl line
+- Windows `.exe` download link
+
+Search with: `grep -n "releases/download" README.md`
+
+### 4. Commit, tag, and push
+```bash
+git add .
+git commit -m "vX.X.X-alpha: <summary>"
+git tag vX.X.X-alpha
+git push origin main --tags
+```
+
+### 5. Create the GitHub Release and attach binaries
+```bash
+gh release create vX.X.X-alpha dist/au-* \
+  --title "vX.X.X-alpha" \
+  --notes "Brief changelog"
+```
+
+All five `dist/au-*` binaries must be attached. Without them, `/update` will report "no binary for this platform" to users.
+
+---
+
 ## Gotchas
 
 - Module name is just `au`, not a full path — imports like `"golang.org/x/term"` work because they're external, but any future internal packages would need the `au` prefix
