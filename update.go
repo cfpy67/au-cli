@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	version   = "v0.3.1-alpha"
+	version   = "v0.3.2-alpha"
 	repoOwner = "cfpy67"
 	repoName  = "au-cli"
 )
@@ -105,29 +105,47 @@ func selfUpdate(downloadURL string) error {
 	}
 	defer resp.Body.Close()
 
-	tmp := exe + ".new"
-	f, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	// Write to a temp file in the system temp dir (always writable).
+	tmp, err := os.CreateTemp("", "au-update-*")
 	if err != nil {
-		return fmt.Errorf("cannot write update: %w", err)
+		return fmt.Errorf("cannot create temp file: %w", err)
 	}
-	if _, err := io.Copy(f, resp.Body); err != nil {
-		f.Close()
-		os.Remove(tmp)
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName)
+
+	if _, err := io.Copy(tmp, resp.Body); err != nil {
+		tmp.Close()
 		return fmt.Errorf("download failed: %w", err)
 	}
-	f.Close()
+	tmp.Close()
+	if err := os.Chmod(tmpName, 0755); err != nil {
+		return fmt.Errorf("cannot chmod update: %w", err)
+	}
 
+	// Try a direct rename first (works when we own the binary location).
 	old := exe + ".old"
 	os.Remove(old)
-	if err := os.Rename(exe, old); err != nil {
-		os.Remove(tmp)
-		return fmt.Errorf("cannot replace binary: %w", err)
+	if err := os.Rename(exe, old); err == nil {
+		if err2 := os.Rename(tmpName, exe); err2 != nil {
+			os.Rename(old, exe) // restore
+			return fmt.Errorf("cannot install update: %w", err2)
+		}
+		os.Remove(old)
+		return nil
 	}
-	if err := os.Rename(tmp, exe); err != nil {
-		os.Rename(old, exe) // restore on failure
-		return fmt.Errorf("cannot install update: %w", err)
+
+	// Fall back to sudo mv for system-wide installs (e.g. /usr/local/bin).
+	fmt.Println("  needs elevated permissions — running sudo mv...")
+	cmd := exec.Command("sudo", "mv", tmpName, exe)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("sudo mv failed: %w", err)
 	}
-	os.Remove(old)
+	if err := exec.Command("sudo", "chmod", "755", exe).Run(); err != nil {
+		return fmt.Errorf("sudo chmod failed: %w", err)
+	}
 	return nil
 }
 
