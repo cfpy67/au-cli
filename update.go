@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	version   = "v0.3.6-alpha"
-	repoOwner = "cfpy67"
+	version   = "v0.3.7-alpha"
+	repoOwner = "whale9820"
 	repoName  = "au-cli"
 )
 
